@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Question For You</title>
+<style>
+  :root {
+    --midnight: #2b1b2e;
+    --midnight-deep: #1e1220;
+    --blush: #f5c9c9;
+    --gold: #d4af7a;
+    --cream: #f7f0e8;
+    --rose: #c1495f;
+    --rose-deep: #a3384c;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    background: radial-gradient(ellipse at top, var(--midnight) 0%, var(--midnight-deep) 70%);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--cream);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  @font-face {
+    font-family: 'Fraunces';
+    src: local('Georgia');
+  }
+
+  .display {
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  }
+
+  /* twinkling stars background */
+  .stars {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: var(--blush);
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: twinkle 3s ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.15; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.6); }
+  }
+
+  .stage {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 560px;
+    padding: 48px 32px;
+    text-align: center;
+  }
+
+  #setup-screen, #ask-screen, #yes-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #ask-screen, #yes-screen { display: none; }
+
+  .setup-label {
+    font-size: 0.95rem;
+    color: var(--blush);
+    margin: 0 0 40px 0;
+    max-width: 34ch;
+    line-height: 1.6;
+    opacity: 0.9;
+  }
+
+  .field {
+    width: 100%;
+    max-width: 320px;
+    text-align: left;
+    margin-bottom: 20px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 0.85rem;
+    color: rgba(247,240,232,0.6);
+    margin-bottom: 8px;
+  }
+
+  .field input {
+    width: 100%;
+    font-family: inherit;
+    font-size: 1.05rem;
+    padding: 14px 18px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(247,240,232,0.25);
+    background: rgba(247,240,232,0.06);
+    color: var(--cream);
+    outline: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .field input::placeholder {
+    color: rgba(247,240,232,0.35);
+  }
+
+  .field input:focus {
+    border-color: var(--gold);
+    background: rgba(247,240,232,0.1);
+  }
+
+  #start-btn {
+    margin-top: 12px;
+    background: linear-gradient(135deg, var(--rose), var(--rose-deep));
+    color: var(--cream);
+    box-shadow: 0 8px 24px rgba(193,73,95,0.4);
+  }
+
+  #start-btn:hover {
+    box-shadow: 0 10px 28px rgba(193,73,95,0.55);
+  }
+
+  #start-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  #link-screen { display: none; }
+
+  .link-box {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .link-box input {
+    flex: 1;
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(247,240,232,0.25);
+    background: rgba(247,240,232,0.06);
+    color: var(--cream);
+  }
+
+  #copy-btn {
+    background: rgba(247,240,232,0.1);
+    color: var(--cream);
+    border: 1.5px solid rgba(247,240,232,0.25);
+    padding: 14px 22px;
+    white-space: nowrap;
+  }
+
+  #copy-btn.copied {
+    background: var(--gold);
+    color: var(--midnight-deep);
+    border-color: var(--gold);
+  }
+
+  .link-note {
+    font-size: 0.85rem;
+    color: rgba(247,240,232,0.5);
+    max-width: 36ch;
+    line-height: 1.6;
+    margin: 0 0 28px 0;
+  }
+
+  #preview-btn {
+    background: transparent;
+    color: var(--cream);
+    border: 1.5px solid rgba(247,240,232,0.35);
+  }
+
+  .heart-mark {
+    font-size: 2.2rem;
+    margin-bottom: 18px;
+    filter: drop-shadow(0 0 12px rgba(212,175,122,0.4));
+  }
+
+  h1.question {
+    font-size: clamp(1.9rem, 6vw, 2.9rem);
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 0 0 14px 0;
+    color: var(--cream);
+    letter-spacing: 0.2px;
+  }
+
+  .names {
+    color: var(--gold);
+  }
+
+  p.sub {
+    font-size: 1.05rem;
+    color: var(--blush);
+    max-width: 40ch;
+    margin: 0 0 40px 0;
+    line-height: 1.6;
+    opacity: 0.9;
+  }
+
+  .button-row {
+    position: relative;
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    min-height: 90px;
+    width: 100%;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 1.05rem;
+    font-weight: 600;
+    padding: 16px 38px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  #yes-btn {
+    background: linear-gradient(135deg, var(--rose), var(--rose-deep));
+    color: var(--cream);
+    box-shadow: 0 8px 24px rgba(193,73,95,0.4);
+    transform: scale(var(--yes-scale, 1));
+  }
+
+  #yes-btn:hover {
+    transform: scale(calc(var(--yes-scale, 1) * 1.05));
+    box-shadow: 0 10px 28px rgba(193,73,95,0.55);
+  }
+
+  #no-btn {
+    background: transparent;
+    color: var(--cream);
+    border: 1.5px solid rgba(247,240,232,0.35);
+    position: relative;
+  }
+
+  #no-btn.dodging {
+    position: fixed;
+  }
+
+  .hint {
+    margin-top: 28px;
+    font-size: 0.85rem;
+    color: rgba(247,240,232,0.45);
+    min-height: 1.2em;
+  }
+
+  /* Yes screen */
+  #yes-screen h1.display {
+    font-size: clamp(2.2rem, 7vw, 3.4rem);
+    color: var(--gold);
+    margin: 0 0 16px 0;
+  }
+
+  #yes-screen p {
+    color: var(--blush);
+    font-size: 1.1rem;
+    max-width: 38ch;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .confetti {
+    position: fixed;
+    top: -20px;
+    z-index: 2;
+    border-radius: 2px;
+    pointer-events: none;
+    animation: fall linear forwards;
+  }
+
+  @keyframes fall {
+    to {
+      transform: translateY(110vh) rotate(540deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .star { animation: none; opacity: 0.4; }
+    .confetti { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="stage">
+
+  <div id="setup-screen">
+    <div class="heart-mark">♥</div>
+    <h1 class="question display">Before we begin</h1>
+    <p class="setup-label">Enter both names to put together the page.</p>
+
+    <div class="field">
+      <label for="your-name">Your name</label>
+      <input type="text" id="your-name" placeholder="e.g. Arjun" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="her-name">Her name</label>
+      <input type="text" id="her-name" placeholder="e.g. Priya" autocomplete="off">
+    </div>
+
+    <button id="start-btn" disabled>Create the page</button>
+  </div>
+
+  <div id="link-screen">
+    <div class="heart-mark">♥</div>
+    <h1 class="question display">Your page is ready</h1>
+    <p class="setup-label">Send this link to her. Opening it goes straight to the question — no form, no setup.</p>
+
+    <div class="link-box">
+      <input type="text" id="link-output" readonly>
+      <button id="copy-btn">Copy</button>
+    </div>
+    <p class="link-note" id="link-note">This link only works once this page is hosted somewhere (like GitHub Pages, Netlify, or your own site). Right now it points at wherever this file is currently opened from.</p>
+
+    <button id="preview-btn">Preview it myself first</button>
+  </div>
+
+  <div id="ask-screen">
+    <div class="heart-mark">♥</div>
+    <h1 class="question display">
+      <span class="names" id="question-name"></span>, will you marry me?
+    </h1>
+    <p class="sub">Whatever you choose, I already know the answer I'm hoping for.</p>
+
+    <div class="button-row" id="button-row">
+      <button id="yes-btn">Yes, I will</button>
+      <button id="no-btn">No</button>
+    </div>
+
+    <div class="hint" id="hint"></div>
+  </div>
+
+  <div id="yes-screen">
+    <h1 class="display" id="yes-name-line"></h1>
+    <p id="yes-message"></p>
+  </div>
+
+</div>
+
+<script>
+  // twinkling stars
+  const starsContainer = document.getElementById('stars');
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.top = Math.random() * 100 + 'vh';
+    s.style.animationDelay = (Math.random() * 3) + 's';
+    starsContainer.appendChild(s);
+  }
+
+  const noBtn = document.getElementById('no-btn');
+  const yesBtn = document.getElementById('yes-btn');
+  const buttonRow = document.getElementById('button-row');
+  const hint = document.getElementById('hint');
+  const setupScreen = document.getElementById('setup-screen');
+  const linkScreen = document.getElementById('link-screen');
+  const askScreen = document.getElementById('ask-screen');
+  const yesScreen = document.getElementById('yes-screen');
+
+  const yourNameInput = document.getElementById('your-name');
+  const herNameInput = document.getElementById('her-name');
+  const startBtn = document.getElementById('start-btn');
+  const linkOutput = document.getElementById('link-output');
+  const copyBtn = document.getElementById('copy-btn');
+  const previewBtn = document.getElementById('preview-btn');
+
+  function showQuestion(yourName, herName) {
+    document.getElementById('question-name').textContent = herName;
+    document.getElementById('yes-name-line').textContent = herName + ' said yes.';
+    document.getElementById('yes-message').textContent =
+      'Thank you for saying yes. From this moment, every day is one I get to spend building a life with you — ' + yourName + ' ♥';
+
+    setupScreen.style.display = 'none';
+    linkScreen.style.display = 'none';
+    askScreen.style.display = 'flex';
+  }
+
+  // If the page was opened via a generated link, skip straight to the question.
+  const params = new URLSearchParams(window.location.search);
+  const linkedFrom = params.get('from');
+  const linkedTo = params.get('to');
+  if (linkedFrom && linkedTo) {
+    showQuestion(linkedFrom, linkedTo);
+  } else {
+
+    function checkFields() {
+      startBtn.disabled = !(yourNameInput.value.trim() && herNameInput.value.trim());
+    }
+    yourNameInput.addEventListener('input', checkFields);
+    herNameInput.addEventListener('input', checkFields);
+
+    startBtn.addEventListener('click', () => {
+      const yourName = yourNameInput.value.trim();
+      const herName = herNameInput.value.trim();
+      if (!yourName || !herName) return;
+
+      const url = new URL(window.location.href);
+      url.search = '';
+      url.searchParams.set('from', yourName);
+      url.searchParams.set('to', herName);
+      linkOutput.value = url.toString();
+
+      setupScreen.style.display = 'none';
+      linkScreen.style.display = 'flex';
+
+      previewBtn.onclick = () => showQuestion(yourName, herName);
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(linkOutput.value);
+      } catch (e) {
+        linkOutput.select();
+        document.execCommand('copy');
+      }
+      copyBtn.textContent = 'Copied';
+      copyBtn.classList.add('copied');
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy';
+        copyBtn.classList.remove('copied');
+      }, 1800);
+    });
+  }
+
+  const hints = [
+    "Nice try.",
+    "Nope, not this one.",
+    "Try again?",
+    "It's quicker to just say yes.",
+    "This button doesn't want to be caught.",
+    "Yes is right there, though.",
+  ];
+  let dodgeCount = 0;
+  let yesScale = 1;
+
+  function moveNoButton() {
+    if (!noBtn.classList.contains('dodging')) {
+      const rect = noBtn.getBoundingClientRect();
+      noBtn.style.width = rect.width + 'px';
+      noBtn.classList.add('dodging');
+    }
+    const margin = 20;
+    const btnWidth = noBtn.offsetWidth;
+    const btnHeight = noBtn.offsetHeight;
+    const maxX = window.innerWidth - btnWidth - margin;
+    const maxY = window.innerHeight - btnHeight - margin;
+    const newX = margin + Math.random() * (maxX - margin);
+    const newY = margin + Math.random() * (maxY - margin);
+    noBtn.style.left = newX + 'px';
+    noBtn.style.top = newY + 'px';
+
+    dodgeCount++;
+    hint.textContent = hints[Math.min(dodgeCount - 1, hints.length - 1)];
+
+    yesScale = Math.min(1.5, 1 + dodgeCount * 0.06);
+    document.documentElement.style.setProperty('--yes-scale', yesScale);
+  }
+
+  noBtn.addEventListener('mouseenter', moveNoButton);
+  noBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    moveNoButton();
+  });
+  // touch support: dodge on touchstart before a tap can register
+  noBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    moveNoButton();
+  }, { passive: false });
+
+  function launchConfetti() {
+    const colors = ['#d4af7a', '#c1495f', '#f5c9c9', '#f7f0e8'];
+    for (let i = 0; i < 90; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      const size = 6 + Math.random() * 6;
+      c.style.width = size + 'px';
+      c.style.height = size * 0.4 + 'px';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDuration = (2.5 + Math.random() * 2) + 's';
+      c.style.animationDelay = (Math.random() * 0.6) + 's';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 5000);
+    }
+  }
+
+  yesBtn.addEventListener('click', () => {
+    askScreen.style.display = 'none';
+    yesScreen.style.display = 'flex';
+    launchConfetti();
+    setTimeout(launchConfetti, 700);
+  });
+</script>
+
+</body>
+</html>
